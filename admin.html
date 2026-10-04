@@ -1,0 +1,55 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>إدارة كافتريا الفرزدق</title><link rel="manifest" href="manifest-admin.json"><meta name="theme-color" content="#948a6c">
+<link rel="icon" href="icons/admin-192.png"><link rel="apple-touch-icon" href="icons/admin-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="إدارة الكافتريا">
+<link rel="stylesheet" href="style.css"></head><body class="admin">
+<div id="lg" class="center card"><img src="icons/admin-192.png" width="110" style="border-radius:24px"><h2>إدارة كافتريا الفرزدق</h2>
+<input id="em" type="email" placeholder="الايميل"><input id="pw" type="password" placeholder="الباسورد" onkeydown="if(event.key=='Enter')login()"><div id="err" style="color:#b3402f"></div><button class="btn big" onclick="login()">دخول</button></div>
+<div id="ap" hidden><header><img src="icons/admin-192.png"><h1>⚙️ لوحة الإدارة</h1><button id="ib" hidden onclick="inst()">📲 تثبيت</button><button onclick="auth.signOut()">خروج</button></header>
+<div class="tabs" id="tb"><button class="on" onclick="tab('s1',this)">📋 الطلبات</button><button onclick="tab('s2',this)">📦 المنتجات</button><button onclick="tab('s3',this)">💰 المحاسبة</button></div>
+<section id="s1"><div class="card"><input id="q" placeholder="ابحث برقم الطلب أو اسم الطالب" oninput="rO()"><select id="dy" onchange="rO()"><option value="today">طلبات اليوم</option><option value="all">كل الطلبات</option></select>
+<select id="st" onchange="rO()"><option value="all">كل الحالات</option><option value="new">جديد (ما انحاسب)</option><option value="paid">مدفوع</option><option value="cancel">ملغي</option></select></div><div id="ol"></div></section>
+<section id="s2" hidden><div class="card"><h3 id="ft">إضافة منتج</h3><input id="pn" placeholder="اسم المنتج"><input id="pp" type="number" placeholder="سعر البيع (د.ع)"><input id="pc" type="number" placeholder="سعر الشراء / الكلفة (د.ع) — للربح">
+<select id="pg"></select><label><input type="checkbox" id="po" style="width:auto"> من عروض اليوم</label><br><label><input type="checkbox" id="pw2" style="width:auto"> جديد اليوم</label>
+<input type="file" accept="image/*" onchange="pick(this)"><img id="pv" hidden width="90"><button class="btn big" onclick="savep()">حفظ</button><button class="btn ghost big" onclick="clearf()" style="margin-top:6px">مسح الحقول</button></div><div id="pl"></div></section>
+<section id="s3" hidden><div class="card"><select id="pr" onchange="per=this.value;$('mo').hidden=per!='m';rA()"><option value="today">اليوم</option><option value="week">آخر 7 أيام</option><option value="month">هذا الشهر</option><option value="m">اختيار شهر</option></select>
+<input id="mo" type="month" hidden onchange="rA()"><button class="btn big" onclick="csv()">⬇️ تصدير Excel (CSV)</button></div><div class="grid" id="sg"></div>
+<div class="card"><h3>حسب اليوم</h3><div id="dt"></div></div><div class="card"><h3>أكثر المنتجات مبيعاً</h3><div id="tp"></div></div></section></div>
+<div id="toast" hidden></div>
+<footer class="sig">Made by <a href="https://hussein1labtop-jpg.github.io/Profile-/" target="_blank" rel="noopener">Hussein</a></footer>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="config.js"></script><script>
+firebase.initializeApp(FB);const db=firebase.firestore(),auth=firebase.auth();
+let O=[],P=[],per='today',first=true,img='',eid='',on=false;
+$('pg').innerHTML=CATS.filter(c=>c.id!='offers').map(c=>`<option value="${c.id}">${c.t}</option>`).join('');
+$('mo').value=new Date().toISOString().slice(0,7);
+auth.onAuthStateChanged(u=>{$('lg').hidden=!!u;$('ap').hidden=!u;if(u&&!on){on=true;init()}});
+function login(){auth.signInWithEmailAndPassword($('em').value,$('pw').value).catch(()=>$('err').textContent='الايميل او الباسورد غلط')}
+function tab(id,b){['s1','s2','s3'].forEach(x=>$(x).hidden=x!=id);document.querySelectorAll('#tb button').forEach(x=>x.classList.remove('on'));b.classList.add('on')}
+function init(){
+db.collection('orders').orderBy('at','desc').limit(3000).onSnapshot(s=>{if(!first)s.docChanges().forEach(c=>{if(c.type=='added')ping(c.doc.data())});first=false;O=s.docs.map(d=>({id:d.id,...d.data()}));rO();rA()});
+db.collection('products').onSnapshot(s=>{P=s.docs.map(d=>({id:d.id,...d.data()}));rP()})}
+function ping(o){try{const a=new AudioContext(),s=a.createOscillator();s.connect(a.destination);s.frequency.value=880;s.start();s.stop(a.currentTime+.4)}catch(e){}
+navigator.vibrate&&navigator.vibrate(300);const t=$('toast');t.hidden=false;t.textContent=`🔔 طلب جديد #${o.n} — ${o.name} — ${fmt(o.total)}`;setTimeout(()=>t.hidden=true,6000)}
+const sod=t=>new Date(t).setHours(0,0,0,0);
+function sts(id,s){db.collection('orders').doc(id).update({status:s})}
+function rO(){const q=$('q').value.trim().replace('#',''),st=$('st').value,d=$('dy').value;
+const l=O.filter(o=>(st=='all'||o.status==st)&&(d=='all'||o.at>=sod(Date.now()))&&(!q||String(o.n)==q||o.name.includes(q)));
+$('ol').innerHTML=l.slice(0,150).map(o=>`<div class="card o ${o.status}"><div class="h"><b>#${o.n}</b><span>${esc(o.name)}</span><small>${new Date(o.at).toLocaleString('ar-IQ')}</small></div>${o.items.map(i=>`<div class="row"><span>${esc(i.name)} × ${i.q}</span><span>${fmt(i.price*i.q)}</span></div>`).join('')}<div class="row"><b>المجموع</b><b>${fmt(o.total)}</b></div><div class="act">${o.status=='new'?`<button class="btn" onclick="sts('${o.id}','paid')">✓ استلمت المبلغ</button><button class="btn red" onclick="sts('${o.id}','cancel')">إلغاء</button>`:`<span class="tag">${o.status=='paid'?'✅ مدفوع':'❌ ملغي'}</span><button class="btn ghost" onclick="sts('${o.id}','new')">رجوع</button>`}</div></div>`).join('')||'<p class="mut">ماكو طلبات</p>'}
+function range(){const n=new Date();let a,b=Infinity;if(per=='today')a=sod(n);else if(per=='week'){const d=new Date(sod(n));d.setDate(d.getDate()-6);a=+d}else if(per=='month')a=+new Date(n.getFullYear(),n.getMonth(),1);else{const[y,m]=$('mo').value.split('-');a=+new Date(y,m-1,1);b=+new Date(y,m,1)}return[a,b]}
+const inR=()=>{const[a,b]=range();return O.filter(o=>o.at>=a&&o.at<b)};
+function rA(){const l=inR(),pd=l.filter(o=>o.status=='paid'),s=pd.reduce((x,o)=>x+o.total,0),c=pd.reduce((x,o)=>x+o.cost,0);
+$('sg').innerHTML=[['الطلبات المدفوعة',pd.length],['المبيعات',fmt(s)],['الكلفة',fmt(c)],['صافي الربح',fmt(s-c),'pf'],['متوسط الطلب',fmt(pd.length?s/pd.length:0)],['جديد / ملغي',l.filter(o=>o.status=='new').length+' / '+l.filter(o=>o.status=='cancel').length]].map(x=>`<div class="st ${x[2]||''}">${x[0]}<b>${x[1]}</b></div>`).join('');
+const tp={},dd={};pd.forEach(o=>{o.items.forEach(i=>{const t=tp[i.name]||(tp[i.name]={q:0,r:0,p:0});t.q+=i.q;t.r+=i.price*i.q;t.p+=(i.price-i.cost)*i.q});const k=new Date(o.at).toLocaleDateString('en-CA'),t=dd[k]||(dd[k]={n:0,s:0,p:0});t.n++;t.s+=o.total;t.p+=o.total-o.cost});
+$('dt').innerHTML='<table><tr><th>اليوم</th><th>طلبات</th><th>مبيعات</th><th>ربح</th></tr>'+Object.keys(dd).sort().reverse().map(k=>`<tr><td>${k}</td><td>${dd[k].n}</td><td>${fmt(dd[k].s)}</td><td>${fmt(dd[k].p)}</td></tr>`).join('')+'</table>';
+$('tp').innerHTML='<table><tr><th>المنتج</th><th>الكمية</th><th>المبيعات</th><th>الربح</th></tr>'+Object.entries(tp).sort((a,b)=>b[1].q-a[1].q).slice(0,15).map(([k,t])=>`<tr><td>${esc(k)}</td><td>${t.q}</td><td>${fmt(t.r)}</td><td>${fmt(t.p)}</td></tr>`).join('')+'</table>'}
+function csv(){const r=[['رقم','الاسم','التاريخ','المنتجات','المجموع','الكلفة','الربح','الحالة']];inR().forEach(o=>r.push([o.n,o.name,new Date(o.at).toLocaleString('en-CA'),o.items.map(i=>i.name+'x'+i.q).join(' + '),o.total,o.cost,o.total-o.cost,{new:'جديد',paid:'مدفوع',cancel:'ملغي'}[o.status]]));
+const t='\ufeff'+r.map(x=>x.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download='تقرير-الكافتريا.csv';a.click()}
+function pick(f){const r=new FileReader();r.onload=e=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas'),k=Math.min(1,320/Math.max(i.width,i.height));c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);img=c.toDataURL('image/jpeg',.7);$('pv').src=img;$('pv').hidden=false};i.src=e.target.result};r.readAsDataURL(f.files[0])}
+async function savep(){const d={name:$('pn').value.trim(),price:+$('pp').value,cost:+$('pc').value||0,cat:$('pg').value,offer:$('po').checked,isNew:$('pw2').checked};if(!d.name||!d.price)return alert('اكتب الاسم والسعر');if(img)d.img=img;
+eid?await db.collection('products').doc(eid).update(d):await db.collection('products').add(d);clearf()}
+function clearf(){eid='';img='';['pn','pp','pc'].forEach(i=>$(i).value='');$('po').checked=$('pw2').checked=false;$('pv').hidden=true;$('ft').textContent='إضافة منتج'}
+function ed(id){const p=P.find(x=>x.id==id);eid=id;img='';$('pn').value=p.name;$('pp').value=p.price;$('pc').value=p.cost||0;$('pg').value=p.cat;$('po').checked=!!p.offer;$('pw2').checked=!!p.isNew;$('ft').textContent='تعديل: '+p.name;scrollTo(0,0)}
+function del(id){confirm('تحذف المنتج؟')&&db.collection('products').doc(id).delete()}
+function rP(){$('pl').innerHTML=P.map(p=>`<div class="card pi">${p.img?`<img src="${p.img}">`:'☕'}<div><b>${esc(p.name)}</b><br><small>بيع ${fmt(p.price)} • كلفة ${fmt(p.cost)}${p.offer?' • 🔥':''}${p.isNew?' • 🆕':''}</small></div><button class="btn" onclick="ed('${p.id}')">تعديل</button><button class="btn red" onclick="del('${p.id}')">حذف</button></div>`).join('')}
+</script></body></html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>كافتريا الفرزدق</title><link rel="manifest" href="manifest-student.json"><meta name="theme-color" content="#2a3142">
+<link rel="icon" href="icons/student-192.png"><link rel="apple-touch-icon" href="icons/student-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="الكافتريا">
+<link rel="stylesheet" href="style.css"></head><body>
+<div id="login" class="center card"><img src="icons/student-192.png" width="110" style="border-radius:24px"><h2>كافتريا الفرزدق</h2><p>اكتب اسمك حتى تبدي</p>
+<input id="nm" placeholder="الاسم" onkeydown="if(event.key=='Enter')enter()"><button class="btn big" onclick="enter()">دخول</button></div>
+<div id="app" hidden><header><img src="icons/student-192.png"><h1 id="hi"></h1><button id="ib" hidden onclick="inst()">📲 تثبيت</button><button onclick="logout()">خروج</button></header>
+<div id="tabs"></div><div id="list"></div></div>
+<div id="bar" hidden onclick="openCart()"></div>
+<div id="m" class="modal" hidden onclick="if(event.target==this)this.hidden=true"><div class="sheet"><h3>🛒 سلتك</h3><div id="cl"></div>
+<div class="row"><b>المجموع</b><b id="tot"></b></div><button class="btn big" id="sb" onclick="send()" style="margin-top:12px">إرسال الطلب</button></div></div>
+<div id="dn" class="modal" hidden><div class="sheet center" style="margin:0;max-width:none"><h3>تم إرسال طلبك ✅</h3><div>رقم الطلب</div><div class="num" id="on"></div><div id="ot"></div>
+<p>روح لشباك الكافتريا وقول رقم طلبك أو اسمك، وادفع واستلم.</p><button class="btn big" onclick="$('dn').hidden=true">تمام</button></div></div>
+<footer class="sig">Made by <a href="https://hussein1labtop-jpg.github.io/Profile-/" target="_blank" rel="noopener">Hussein</a></footer>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="config.js"></script><script>
+firebase.initializeApp(FB);const db=firebase.firestore();
+let P=[],cart={},cat='offers',nm=localStorage.nm||'';
+function start(){if(!nm)return;$('login').hidden=true;$('app').hidden=false;$('hi').textContent='هلا '+nm;tabs();db.collection('products').onSnapshot(s=>{P=s.docs.map(d=>({id:d.id,...d.data()}));show()})}
+function enter(){const v=$('nm').value.trim();if(!v)return;nm=v;localStorage.nm=v;start()}
+function logout(){localStorage.removeItem('nm');location.reload()}
+function tabs(){$('tabs').innerHTML=CATS.map(c=>`<button class="${c.id==cat?'on':''}" onclick="cat='${c.id}';tabs();show()">${c.t}</button>`).join('')}
+function show(){const l=P.filter(p=>cat=='offers'?(p.offer||p.isNew):p.cat==cat);
+$('list').innerHTML=l.length?l.map(p=>`<div class="p"><div class="im">${p.img?`<img src="${p.img}">`:'☕'}</div><b>${esc(p.name)}${p.isNew?' 🆕':''}</b><span class="pr">${fmt(p.price)}</span><button class="btn" onclick="add('${p.id}')">+ للسلة</button></div>`).join(''):'<p class="mut">ماكو منتجات بهذا القسم</p>';bar()}
+function add(id){cart[id]=(cart[id]||0)+1;bar()}
+function items(){return Object.keys(cart).map(id=>{const p=P.find(x=>x.id==id);return p&&{id,name:p.name,price:p.price,cost:p.cost||0,q:cart[id]}}).filter(Boolean)}
+const sum=it=>it.reduce((a,x)=>a+x.price*x.q,0);
+function bar(){const it=items(),c=it.reduce((a,x)=>a+x.q,0);$('bar').hidden=!c;$('bar').innerHTML=`<span>🛒 ${c} • ${fmt(sum(it))}</span><span>شوف السلة ◀</span>`}
+function openCart(){const it=items();$('cl').innerHTML=it.map(x=>`<div class="row"><span>${esc(x.name)}<br><small>${fmt(x.price)}</small></span><span class="q"><button onclick="ch('${x.id}',-1)">−</button>${x.q}<button onclick="ch('${x.id}',1)">+</button></span><b>${fmt(x.price*x.q)}</b></div>`).join('');$('tot').textContent=fmt(sum(it));$('m').hidden=false}
+function ch(id,d){cart[id]+=d;if(cart[id]<=0)delete cart[id];items().length?openCart():$('m').hidden=true;bar()}
+async function send(){const it=items();if(!it.length)return;$('sb').disabled=true;let n;const total=sum(it),cost=it.reduce((a,x)=>a+x.cost*x.q,0);
+try{const ref=db.doc('counters/orders');await db.runTransaction(async t=>{const s=await t.get(ref);n=(s.exists?s.data().n:1000)+1;t.set(ref,{n});
+t.set(db.collection('orders').doc(),{n,name:nm,items:it.map(({name,price,cost,q})=>({name,price,cost,q})),total,cost,status:'new',at:Date.now()})});
+cart={};bar();$('m').hidden=true;$('on').textContent='#'+n;$('ot').textContent='المجموع: '+fmt(total);$('dn').hidden=false}
+catch(e){alert('صار خطأ، جرب مرة ثانية')}$('sb').disabled=false}
+start();
+</script></body></html>
