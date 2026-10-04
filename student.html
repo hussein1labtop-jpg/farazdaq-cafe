@@ -3,11 +3,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="كافتريا الفرزدق"><link rel="stylesheet" href="style.css"></head>
 <body class="student" data-m="student">
 <div id="lg" class="center card"><img src="icons/student-192.png" width="110" style="border-radius:24px"><h2>كافتريا الفرزدق</h2><p>اكتب اسمك حتى تبدي</p><input id="nm" placeholder="الاسم" onkeydown="if(event.key=='Enter')enter()"><button class="btn big" onclick="enter()">دخول</button></div>
-<div id="ap" hidden><header><img src="icons/student-192.png"><h1 id="hi">كافتريا الفرزدق</h1><button id="ib" hidden onclick="inst()">📲</button><button onclick="openCart()">🛒<b id="cc" hidden></b></button><button onclick="logout()">🚪</button></header>
-<div id="tabs"></div><div id="list"></div>
+<div id="ap" hidden><header><img src="icons/student-192.png"><h1 id="hi">كافتريا الفرزدق</h1><button id="ib" hidden onclick="inst()">📲</button><button onclick="openCart()">🛒<b id="cc" hidden></b></button><button onclick="$('mo').hidden=false">📋</button><button onclick="openN()">💬<b id="nu" hidden></b></button><button onclick="logout()">🚪</button></header>
+<div id="bn" hidden></div><div id="tabs"></div><div id="list"></div>
 <footer class="sig">Made by <a href="https://hussein1labtop-jpg.github.io/Profile-/" target="_blank" rel="noopener">Hussein</a></footer></div>
 <div id="bar" hidden onclick="openCart()"></div>
-<div id="m" class="modal" hidden onclick="if(event.target==this)this.hidden=true"><div class="sheet"><h3>🛒 سلتك</h3><div id="cl"></div><div class="row"><b>المجموع</b><b id="tot"></b></div><button class="btn big" id="sb" onclick="send()" style="margin-top:12px">إرسال الطلب</button></div></div>
-<div id="dn" class="modal" hidden><div class="sheet" style="text-align:center"><h3>تم إرسال طلبك ✅</h3><div>رقم الطلب</div><div class="num" id="on"></div><div id="ot"></div><p>روح لشباك الكافتريا وقول رقم طلبك أو اسمك، وادفع واستلم.</p><button class="btn big" onclick="$('dn').hidden=true">تمام</button></div></div><div id="toast" hidden></div>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<div id="m" class="modal" hidden onclick="if(event.target==this)closeCart()"><div class="sheet"><h3 id="ct">🛒 سلتك</h3><div id="cl"></div><div class="row"><b>المجموع</b><b id="tot"></b></div><button class="btn big" id="sb" onclick="send()" style="margin-top:12px">إرسال الطلب</button></div></div>
+<div id="dn" class="modal" hidden><div class="sheet" style="text-align:center"><h3 id="dh">تم إرسال طلبك ✅</h3><div>رقم الطلب</div><div class="num" id="on"></div><div id="ot"></div><p>روح لشباك الكافتريا وقول رقم طلبك أو اسمك، وادفع واستلم.</p><button class="btn big" onclick="$('dn').hidden=true">تمام</button></div></div><div id="mo" class="full" hidden><div class="top"><b>📋 طلباتي</b><button onclick="$('mo').hidden=true">✕</button></div><div id="ml"></div></div>
+<div id="nt" class="full" hidden><div class="top"><b>💬 ملاحظات للإدارة</b><button onclick="$('nt').hidden=true">✕</button></div><div class="card"><textarea id="ntx" rows="3" placeholder="اكتب ملاحظتك أو اقتراحك..."></textarea><button class="btn big" onclick="sendN()">إرسال</button></div><div id="nl"></div></div>
+<div id="toast" hidden></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="config.js"></script><script src="app.js"></script></body></html>

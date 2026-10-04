@@ -1,8 +1,21 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{d}/documents {
-    match /products/{id} { allow read: if true; allow write: if request.auth != null; }
-    match /orders/{id} { allow create: if true; allow read, update, delete: if request.auth != null; }
-    match /counters/orders { allow read, write: if true; }
+    function isAdmin() { return request.auth != null && request.auth.token.email == 'admin@farazdaq.com'; }
+    function mine(r) { return request.auth != null && r.data.uid == request.auth.uid; }
+    match /products/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /settings/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /orders/{id} {
+      allow create: if mine(request.resource);
+      allow read: if isAdmin() || mine(resource);
+      allow update: if isAdmin() || (mine(resource) && mine(request.resource) && resource.data.status == 'new' && request.resource.data.status in ['new','cancel']);
+      allow delete: if isAdmin();
+    }
+    match /notes/{id} {
+      allow create: if mine(request.resource);
+      allow read: if isAdmin() || mine(resource);
+      allow update, delete: if isAdmin();
+    }
+    match /counters/orders { allow read, write: if request.auth != null; }
   }
 }

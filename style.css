@@ -42,3 +42,8 @@ input,select{width:100%;padding:12px;border:1px solid #ccc;border-radius:10px;fo
 table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px;border-bottom:1px solid #0001;text-align:right}
 #toast{position:fixed;top:70px;left:10px;right:10px;background:var(--n);color:#fff;padding:14px;border-radius:12px;z-index:30}
 .sig{text-align:center;padding:18px 0 4px;font-size:13px;color:#888;direction:ltr}.sig a{color:var(--g);font-weight:bold;text-decoration:none}
+textarea{width:100%;padding:12px;border:1px solid #ccc;border-radius:10px;font:inherit;margin:5px 0;background:#fff}
+.rep{background:#f1ecdd;border-radius:10px;padding:10px;margin-top:6px}
+#bn{background:var(--g);color:#fff;overflow:hidden;white-space:nowrap;padding:8px 0;font-weight:bold}#bn span{display:inline-block;padding:0 14px}
+@keyframes mq{from{transform:translateX(var(--a))}to{transform:translateX(var(--b))}}
+header h1{font-size:15px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}header{gap:6px}header button{padding:7px 9px;font-size:17px}
