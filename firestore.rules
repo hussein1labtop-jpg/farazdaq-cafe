@@ -8,7 +8,7 @@ service cloud.firestore {
     match /orders/{id} {
       allow create: if mine(request.resource);
       allow read: if isAdmin() || mine(resource);
-      allow update: if isAdmin() || (mine(resource) && mine(request.resource) && resource.data.status == 'new' && request.resource.data.status in ['new','cancel']);
+      allow update: if isAdmin() || (mine(resource) && mine(request.resource) && ((resource.data.status == 'new' && request.resource.data.status in ['new','cancel']) || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hid'])));
       allow delete: if isAdmin();
     }
     match /notes/{id} {

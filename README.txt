@@ -1,4 +1,4 @@
-حساب الإدارة: Firebase > Authentication > Users > Add user
-الايميل: admin@farazdaq.com
-الباسورد: fz + الرمز الذي تريده (مثال: الرمز 4821 يعني الباسورد fz4821)
-ثم تدخل بـ admin.html وتكتب الرمز 4821 فقط.
+روابط التطبيقين (كل واحد بمجلد مستقل):
+الطلاب: https://hussein1labtop-jpg.github.io/farazdaq-cafe/student/
+الإدارة: https://hussein1labtop-jpg.github.io/farazdaq-cafe/admin/
+حساب الإدارة: ايميل admin@farazdaq.com وباسورد fz + الرمز (مثال fz4821)

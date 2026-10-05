@@ -1,5 +1,5 @@
 const A=document.body.dataset.m=='admin',ap=firebase.initializeApp(FB,A?'admin':'student'),db=ap.firestore(),auth=ap.auth();
-let P=[],cart={},cat='today',nm=localStorage.nm||'',eid='',img='',O=[],per='today',first=true,booted=0,cleaned=0,MO=[],NT=[],NA=[],editId='',seen={},firstN=true,curB='';
+let P=[],cart={},cat='today',nm=localStorage.nm||'',eid='',img='',O=[],per='today',first=true,booted=0,cleaned=0,MO=[],NT=[],NA=[],editId='',seen={},firstN=true,curB='',fN=false;
 const ready=A?0:new Promise(r=>auth.onAuthStateChanged(u=>u&&r(u.uid)));
 const vis=p=>p.cat!='today'||p.keep||p.day==td();
 function boot(){if(!A)auth.signInAnonymously();tabs();if(A)$('eg').innerHTML=CATS.map(c=>`<option value="${c.id}">${c.t}</option>`).join('');
@@ -17,7 +17,7 @@ function show(){const l=P.filter(p=>p.cat==cat&&vis(p)).sort((a,b)=>(a.out?1:0)-
 $('list').innerHTML=(A?`<button class="addb" onclick="edit()">➕ إضافة ${cat=='today'?'لعروض اليوم':'منتج'}</button>`:'')+(l.length?l.map(card).join(''):`<p class="mut">${cat=='today'?'ماكو عروض اليوم':'ماكو منتجات بهذا القسم'}</p>`);bar()}
 // ===== الطالب =====
 const sum=it=>it.reduce((a,x)=>a+x.price*x.q,0);
-function add(id){cart[id]=(cart[id]||0)+1;bar()}
+function add(id){cart[id]=(cart[id]||0)+1;snd('add');bar()}
 function items(){return Object.keys(cart).map(id=>{const p=P.find(x=>x.id==id);return p&&!p.out&&{id,name:p.name,price:p.price,q:cart[id]}}).filter(Boolean)}
 function bar(){if(A)return;const it=items(),c=it.reduce((a,x)=>a+x.q,0);$('bar').hidden=!c;$('bar').innerHTML=`<span>🛒 ${c} • ${fmt(sum(it))}</span><span>شوف السلة ◀</span>`;$('cc').hidden=!c;$('cc').textContent=c}
 function openCart(){const it=items(),eo_=MO.find(o=>o.id==editId);$('ct').textContent=eo_?'✏️ تعديل الطلب #'+eo_.n:'🛒 سلتك';$('sb').textContent=eo_?'حفظ التعديل':'إرسال الطلب';
@@ -29,13 +29,13 @@ async function send(){const it=items();if(!it.length)return;$('sb').disabled=tru
 try{const uid=await ready;
 if(ed_){const o=MO.find(x=>x.id==editId);await db.collection('orders').doc(editId).update({items:mp,total,upd:Date.now()});n=o.n;editId=''}
 else{const ref=db.doc('counters/orders');await db.runTransaction(async t=>{const s=await t.get(ref);n=(s.exists?s.data().n:1000)+1;t.set(ref,{n});t.set(db.collection('orders').doc(),{n,uid,name:nm,items:mp,total,status:'new',at:Date.now()})})}
-cart={};bar();$('m').hidden=true;$('dh').textContent=ed_?'تم حفظ التعديل ✅':'تم إرسال طلبك ✅';$('on').textContent='#'+n;$('ot').textContent='المجموع: '+fmt(total);$('dn').hidden=false}
+cart={};bar();$('m').hidden=true;snd('ok');$('dh').textContent=ed_?'تم حفظ التعديل ✅':'تم إرسال طلبك ✅';$('on').textContent='#'+n;$('ot').textContent='المجموع: '+fmt(total);$('dn').hidden=false}
 catch(e){alert('صار خطأ، جرب مرة ثانية')}$('sb').disabled=false}
 // طلباتي + الملاحظات
 function mine(uid){db.collection('orders').where('uid','==',uid).onSnapshot(s=>{MO=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.at-a.at);rM()});
-db.collection('notes').where('uid','==',uid).onSnapshot(s=>{NT=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.at-a.at);rN()})}
+db.collection('notes').where('uid','==',uid).onSnapshot(s=>{if(fN)s.docChanges().forEach(c=>c.type=='modified'&&c.doc.data().reply&&snd('rep'));fN=true;NT=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.at-a.at);rN()})}
 const SL={new:'⏳ بانتظار الاستلام',paid:'✅ مدفوع',cancel:'❌ ملغي'};
-function rM(){$('ml').innerHTML=MO.slice(0,50).map(o=>`<div class="card o ${o.status}"><div class="h"><b>#${o.n}</b><small>${new Date(o.at).toLocaleString('ar-IQ')}</small><span>${SL[o.status]}</span></div>${o.items.map(i=>`<div class="row"><span>${esc(i.name)} × ${i.q}</span><span>${fmt(i.price*i.q)}</span></div>`).join('')}<div class="row"><b>المجموع</b><b>${fmt(o.total)}</b></div><div class="act">${o.status=='new'?`<button class="btn" onclick="eo('${o.id}')">✏️ تعديل</button><button class="btn red" onclick="co('${o.id}')">إلغاء</button>`:''}<button class="btn ghost" onclick="ro('${o.id}')">🔁 أعد الطلب</button></div></div>`).join('')||'<p class="mut">ماكو طلبات لحد الان</p>'}
+function rM(){$('ml').innerHTML=MO.filter(o=>!o.hid).slice(0,50).map(o=>`<div class="card o ${o.status}"><div class="h"><b>#${o.n}</b><small>${new Date(o.at).toLocaleString('ar-IQ')}</small><span>${SL[o.status]}</span></div>${o.items.map(i=>`<div class="row"><span>${esc(i.name)} × ${i.q}</span><span>${fmt(i.price*i.q)}</span></div>`).join('')}<div class="row"><b>المجموع</b><b>${fmt(o.total)}</b></div><div class="act">${o.status=='new'?`<button class="btn" onclick="eo('${o.id}')">✏️ تعديل</button><button class="btn red" onclick="co('${o.id}')">إلغاء</button>`:''}<button class="btn ghost" onclick="ro('${o.id}')">🔁 أعد الطلب</button><button class="btn ghost" onclick="dl('${o.id}')">🗑</button></div></div>`).join('')||'<p class="mut">ماكو طلبات لحد الان</p>'}
 function fill(o){cart={};let k=0;o.items.forEach(i=>{const p=P.find(x=>x.id==i.id)||P.find(x=>x.name==i.name);if(p&&!p.out&&vis(p))cart[p.id]=(cart[p.id]||0)+i.q;else k++});if(k)alert('بعض المنتجات مو متوفرة هسه وانشالت من الطلب');$('mo').hidden=true;bar()}
 function eo(id){fill(MO.find(o=>o.id==id));editId=id;openCart()}
 function ro(id){editId='';fill(MO.find(o=>o.id==id));openCart()}
@@ -54,14 +54,14 @@ if(eid)await c.doc(eid).update(d);else await c.add({...d,out:false,at:Date.now()
 function tg(id){db.collection('products').doc(id).update({out:!P.find(x=>x.id==id).out})}
 function del(id){confirm('تحذف المنتج؟')&&db.collection('products').doc(id).delete()}
 // ===== الإدارة: الطلبات =====
-function orders(){db.collection('orders').orderBy('at','desc').limit(3000).onSnapshot(s=>{s.docChanges().forEach(c=>{const d=c.doc.data(),id=c.doc.id;if(!first){if(c.type=='added')toast(`🔔 طلب جديد #${d.n} — ${d.name} — ${fmt(d.total)}`);else if(c.type=='modified'&&d.upd&&seen[id]!=d.upd)toast(`✏️ ${d.name} ${d.status=='cancel'?'ألغى':'عدّل'} الطلب #${d.n}`)}seen[id]=d.upd});first=false;O=s.docs.map(d=>({id:d.id,...d.data()}));const n=O.filter(o=>o.status=='new').length;$('nb').hidden=!n;$('nb').textContent=n;rO();rA()})}
-function toast(m){try{const a=new AudioContext(),s=a.createOscillator();s.connect(a.destination);s.frequency.value=880;s.start();s.stop(a.currentTime+.4)}catch(e){}
+function orders(){db.collection('orders').orderBy('at','desc').limit(3000).onSnapshot(s=>{s.docChanges().forEach(c=>{const d=c.doc.data(),id=c.doc.id;if(!first){if(c.type=='added')toast(`🔔 طلب جديد #${d.n} — ${d.name} — ${fmt(d.total)}`);else if(c.type=='modified'&&d.upd&&seen[id]!=d.upd)toast(`✏️ ${d.name} ${d.status=='cancel'?'ألغى':'عدّل'} الطلب #${d.n}`,'note')}seen[id]=d.upd});first=false;O=s.docs.map(d=>({id:d.id,...d.data()}));const n=O.filter(o=>o.status=='new').length;$('nb').hidden=!n;$('nb').textContent=n;rO();rA()})}
+function toast(m,s){snd(s||'order');
 navigator.vibrate&&navigator.vibrate(300);const t=$('toast');t.hidden=false;t.textContent=m;clearTimeout(window.tt);window.tt=setTimeout(()=>t.hidden=true,6000)}
 const sod=t=>new Date(t).setHours(0,0,0,0);
 function sts(id,s){db.collection('orders').doc(id).update({status:s})}
 function rO(){const q=$('q').value.trim().replace('#',''),st=$('st').value,d=$('dy').value;
 const l=O.filter(o=>(st=='all'||o.status==st)&&(d=='all'||o.at>=sod(Date.now()))&&(!q||String(o.n)==q||o.name.includes(q)));
-$('ol').innerHTML=l.slice(0,150).map(o=>`<div class="card o ${o.status}"><div class="h"><b>#${o.n}</b><span>${esc(o.name)}</span><small>${new Date(o.at).toLocaleString('ar-IQ')}</small></div>${o.items.map(i=>`<div class="row"><span>${esc(i.name)} × ${i.q}</span><span>${fmt(i.price*i.q)}</span></div>`).join('')}<div class="row"><b>المجموع</b><b>${fmt(o.total)}</b></div><div class="act">${o.status=='new'?`<button class="btn" onclick="sts('${o.id}','paid')">✓ استلمت المبلغ</button><button class="btn red" onclick="sts('${o.id}','cancel')">إلغاء</button>`:`<span class="tag">${o.status=='paid'?'✅ مدفوع':'❌ ملغي'}</span><button class="btn ghost" onclick="sts('${o.id}','new')">رجوع</button>`}</div></div>`).join('')||'<p class="mut">ماكو طلبات</p>'}
+$('ol').innerHTML=l.slice(0,150).map(o=>`<div class="card o ${o.status}"><div class="h"><b>#${o.n}</b><span>${esc(o.name)}</span><small>${new Date(o.at).toLocaleString('ar-IQ')}</small></div>${o.items.map(i=>`<div class="row"><span>${esc(i.name)} × ${i.q}</span><span>${fmt(i.price*i.q)}</span></div>`).join('')}<div class="row"><b>المجموع</b><b>${fmt(o.total)}</b></div><div class="act">${o.status=='new'?`<button class="btn" onclick="sts('${o.id}','paid')">✓ استلمت المبلغ</button><button class="btn red" onclick="sts('${o.id}','cancel')">إلغاء</button>`:`<span class="tag">${o.status=='paid'?'✅ مدفوع':'❌ ملغي'}</span><button class="btn ghost" onclick="sts('${o.id}','new')">رجوع</button>`}<button class="btn ghost" onclick="dord('${o.id}')">🗑</button></div></div>`).join('')||'<p class="mut">ماكو طلبات</p>'}
 // ===== الإدارة: المحاسبة =====
 function range(){const n=new Date();let a,b=Infinity;if(per=='today')a=sod(n);else if(per=='week'){const d=new Date(sod(n));d.setDate(d.getDate()-6);a=+d}else if(per=='month')a=+new Date(n.getFullYear(),n.getMonth(),1);else{const[y,m]=($('mo').value||td().slice(0,7)).split('-');a=+new Date(y,m-1,1);b=+new Date(y,m,1)}return[a,b]}
 const inR=()=>{const[a,b]=range();return O.filter(o=>o.at>=a&&o.at<b)};
@@ -73,7 +73,7 @@ $('tp').innerHTML='<table><tr><th>المنتج</th><th>الكمية</th><th>ال
 function csv(){const r=[['رقم','الاسم','التاريخ','المنتجات','المجموع','الحالة']];inR().forEach(o=>r.push([o.n,o.name,new Date(o.at).toLocaleString('en-CA'),o.items.map(i=>i.name+'x'+i.q).join(' + '),o.total,{new:'جديد',paid:'مدفوع',cancel:'ملغي'}[o.status]]));
 const t='\ufeff'+r.map(x=>x.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download='تقرير-الكافتريا.csv';a.click()}
 // ===== الإدارة: الملاحظات =====
-function notes(){db.collection('notes').orderBy('at','desc').limit(500).onSnapshot(s=>{if(!firstN)s.docChanges().forEach(c=>c.type=='added'&&toast(`💬 ملاحظة جديدة من ${c.doc.data().name}`));firstN=false;NA=s.docs.map(d=>({id:d.id,...d.data()}));const u=NA.filter(n=>!n.reply).length;$('ub').hidden=!u;$('ub').textContent=u;rNA()})}
+function notes(){db.collection('notes').orderBy('at','desc').limit(500).onSnapshot(s=>{if(!firstN)s.docChanges().forEach(c=>c.type=='added'&&toast(`💬 ملاحظة جديدة من ${c.doc.data().name}`,'note'));firstN=false;NA=s.docs.map(d=>({id:d.id,...d.data()}));const u=NA.filter(n=>!n.reply).length;$('ub').hidden=!u;$('ub').textContent=u;rNA()})}
 function rNA(){const l=[...NA.filter(n=>!n.reply),...NA.filter(n=>n.reply)];$('nal').innerHTML=l.map(n=>`<div class="card"><div class="h"><b>${esc(n.name)}</b><small>${new Date(n.at).toLocaleString('ar-IQ')}</small></div><p>${esc(n.text)}</p>${n.reply?`<div class="rep">ردك: ${esc(n.reply)}</div>`:''}<input id="r_${n.id}" placeholder="${n.reply?'تعديل الرد':'اكتب ردك'}"><div class="act"><button class="btn" onclick="rep('${n.id}')">إرسال الرد</button><button class="btn red" onclick="dnote('${n.id}')">🗑</button></div></div>`).join('')||'<p class="mut">ماكو ملاحظات</p>'}
 function rep(id){const v=$('r_'+id).value.trim();if(v)db.collection('notes').doc(id).update({reply:v,rat:Date.now()})}
 function dnote(id){confirm('تحذف الملاحظة؟')&&db.collection('notes').doc(id).delete()}
@@ -82,3 +82,6 @@ function ban(t){curB=t||'';const b=$('bn');if(!curB){b.hidden=true;b.innerHTML='
 requestAnimationFrame(()=>{const cw=b.clientWidth,w=s.scrollWidth;if(w>cw){b.style.setProperty('--a',-cw+'px');b.style.setProperty('--b',w+'px');s.style.animation=`mq ${(cw+w)/50}s linear infinite`}})}
 function openB(){$('bt').value=curB;$('bm').hidden=false}
 async function saveB(t){await db.doc('settings/banner').set({text:t,at:Date.now()});$('bm').hidden=true}
+
+function dl(id){const o=MO.find(x=>x.id==id);if(!o||!confirm(o.status=='new'?'تحذف الطلب؟ راح ينلغي':'تحذف الطلب من قائمتك؟'))return;snd('del');db.collection('orders').doc(id).update(o.status=='new'?{status:'cancel',hid:true,upd:Date.now()}:{hid:true})}
+function dord(id){confirm('تحذف الطلب نهائياً؟ راح ينحذف من المحاسبة هم.')&&(snd('del'),db.collection('orders').doc(id).delete())}
